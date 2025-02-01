@@ -53,4 +53,4 @@ jobs:
           REDEPLOY_TOKEN: ${{ secrets.REDEPLOY_TOKEN }}
           REDEPLOY_URL: ${{ secrets.REDEPLOY_URL }}
         run: |
-          curl -H "Authorization: $REDEPLOY_TOKEN" "$INSTANCE_URL"
+          curl -H "Authorization: $REDEPLOY_TOKEN" "$REDEPLOY_URL"

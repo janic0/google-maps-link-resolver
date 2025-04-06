@@ -4,7 +4,7 @@ RUN apk update && apk add --no-cache git && apk add ca-certificates
 RUN apk --update add ca-certificates
 WORKDIR $GOPATH/src/mypackage/myapp/
 COPY . .
-RUN go get -d -v
+RUN go get -v
 RUN go build -o /go/bin/google-maps-link-resolver
 
 FROM scratch

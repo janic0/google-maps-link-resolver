@@ -31,6 +31,18 @@ Content-Length: 110
 }
 ```
 
+### Example error response:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": 6,
+    "message": "google maps provided an invalid response"
+  }
+}
+```
+
 ## Possible input
 
 - maps.app.goo.gl/\*

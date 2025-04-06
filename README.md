@@ -35,3 +35,19 @@ Content-Length: 110
 
 - maps.app.goo.gl/\*
 - www.google.com/maps*
+
+## Running with docker
+
+```bash
+docker run -p 8000:8000 --restart=unless-stopped ghcr.io/janic0/google-maps-link-resolver:latest
+```
+
+```yml
+services:
+  google-maps-url-resolver:
+    container_name: google-maps-url-resolver
+    image: ghcr.io/janic0/google-maps-link-resolver:latest
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+```

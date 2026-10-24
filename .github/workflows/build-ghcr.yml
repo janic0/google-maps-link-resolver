@@ -1,0 +1,67 @@
+# Multi-arch build -> ghcr.io
+#
+# Added alongside the existing deploy.yml deliberately: that one keeps pushing
+# single-arch amd64 to reg.janic.io for the legacy host, while this publishes
+# linux/amd64 + linux/arm64 to ghcr.io for the new ARM server. Both run until
+# the migration completes, then deploy.yml can go.
+#
+# arm64 is built under QEMU emulation: GitHub's native ARM runners are free for
+# public repos only, and these are private. Slower, but correct and free.
+name: build-ghcr
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v4
+
+      # No secrets needed: GITHUB_TOKEN can push to this repo's own ghcr package.
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The digest is what gets pinned in the infra flake - tags are mutable,
+      # and ci/check-pins.sh rejects anything not pinned by digest.
+      - name: Print digest to pin in janic0/infra
+        run: |
+          echo "::notice title=Pin this digest::${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
